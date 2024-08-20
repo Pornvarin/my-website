@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เคส EPU</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        #summary {
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .province-item {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+            color: #333;
+            flex: 1 1 150px;
+            position: relative;
+        }
+        .province-item:hover {
+            background-color: #f0f0f0;
+        }
+        .province-item[data-province-color] {
+            border-left: 5px solid;
+            border-left-color: var(--province-color);
+        }
+        .case-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: none;
+            margin-top: 5px;
+            text-align: left;
+        }
+        .case-list li {
+            margin: 3px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .case-list li:hover {
+            background: #e0e0e0;
+        }
+        h1 {
+            text-align: center;
+            margin: 20px;
+        }
+        #logo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>เคส EPU</h1>
+    <div id="summary"></div>
+    <div id="map"></div>
+    <img id="logo" src="https://www.pcd.go.th/wp-content/uploads/2023/05/PCD-logo-2023-04.png" alt="ตรากรมควบคุมมลพิษ">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([15.8700, 100.9925], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var bounds = [[5.5, 97.5], [20.5, 105.7]];
+        map.setMaxBounds(bounds);
+        map.setMinZoom(6);
+        map.setMaxZoom(10);
+
+        map.on('drag', function() {
+            map.panInsideBounds(bounds, { animate: false });
+        });
+
+        var locations = [
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "เอกอุทัย สาขาอุทัย", 
+                "coords": [14.350933, 100.701149], // พิกัดที่ถูกต้องสำหรับบริษัท เอกอุทัย สาขาอุทัย
+                "info": "<b>เอกอุทัย สาขาอุทัย</b><br>การตรวจสอบกรณีกลิ่นเหม็นรบกวนและอาจมีการปนเปื้อนในน้ำใต้ดินของ บริษัท เอกอุทัย จำกัด ตำบลสามบัณฑิต อำเภออุทัย จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การตรวจสอบกรณีกลิ่นเหม็นรบกวนและอาจมีการปนเปื้อนน้ำใต้ดิน' class='info-popup'>",
+            },
+            {
+                "province": "ลพบุรี",
+                "name": "ดีลัง พัฒนานิคม ลพบุรี", 
+                "coords": [14.875033, 100.896600], // 
+                "info": "<b>ดีลัง พัฒนานิคม ลพบุรี</b><br>การลักลอบทิ้งกากของเสียอุตสาหกรรมในพื้นที่เอกชน ตำบลดีลัง อำเภอพัฒนานิคม จังหวัดลพบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรมในพื้นที่เอกชน' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "ข้าวเม่า อุทัย อยุธยา", 
+                "coords": [14.401562, 100.652506], // 
+                "info": "<b>ข้าวเม่า อุทัย อยุธยา</b><br>การลักลอบทิ้งกากของเสียอุตสาหกรรม บริเวณพื้นที่ตำบลข้าวเม่า อำเภออุทัย จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "หนองเจ๊ก ภาชี", 
+                "coords": [14.465277, 100.69774], // 
+                "info": "<b>หนองเจ๊ก ภาชี</b><br>การลักลอบทิ้งกากของเสียจากโรงงานอุตสาหกรรมบริเวณบ้านหนองเจ๊ก ตำบลไผ่ล้อม อำเภอภาชี จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "สระบุรี",
+                "name": "นิคมอุตสาหกรรม แก่งคอย", 
+                "coords": [14.465277, 100.69774], // 
+                "info": "<b>นิคมอุตสาหกรรม แก่งคอย</b><br>กรณีลักลอบทิ้งกากของเสียบริเวณพื้นที่นิคมอุตสาหกรรมแก่งคอย อำเภอแก่งคอย จังหวัดสระบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "โกดังภาชี", 
+                "coords": [14.3729, 100.5951], // 
+                "info": "<b>โกดังภาชี</b><br>กรณีลักลอบจัดเก็บของเสียภายในโกดังพื้นที่ ตำบลภาชี อำเภอภาชี จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "โคกม่วงภาชี", 
+                "coords": [14.41831, 100.75899], // 
+                "info": "<b>โคกม่วงภาชี</b><br>กรณีลักลอบทิ้งสารเคมีในพื้นที่ตำบลโคกม่วง อำเภอภาชี จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "ขวัญแก้วบางประอิน", 
+                "coords": [14.0201, 100.4635], // 
+                "info": "<b>ขวัญแก้วบางประอิน/b><br>การลักลอบทิ้งของเสียลงสู่พื้นที่เอกชน หมู่ 1 ตำบลขวัญแก้ว อำเภอบางประอิน จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "อีเอ็กซ์ ซีด", 
+                "coords": [14.2928, 100.3527], // 
+                "info": "<b>อีเอ็กซ์ ซีด/b><br>การลักลอบทิ้งกากของเสียอุตสาหกรรม ในพื้นที่อำเภอนครหลวง จังหวัดพระนครศรีอยุธยา ** การลักลอบทิ้งของเสียอุตสาหกรรม ของบริษัท อีเอ็กซ์ ซีด จำกัด ตำบลบางพระครู อำเภอนครหลวง จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "พระนครศรีอยุธยา",
+                "name": "คานหาม อยุธยา", 
+                "coords": [14.2030, 100.3826], // 
+                "info": "<b>คานหาม อยุธยา/b><br>กลิ่นเหม็นสารเคมีที่ลักลอบนำมาทิ้งในท่อระบายน้ำริมถนน ตำบลคานหาม อำเภออุทัย จังหวัดพระนครศรีอยุธยา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ฉะเชิงเทรา",
+                "name": "อ่างเก็บน้ำ ลุ่มน้ำโจนแห่งที่16", 
+                "coords": [14.2030, 100.3826], // 
+                "info": "<b>อ่างเก็บน้ำ ลุ่มน้ำโจนแห่งที่16/b><br>การลักลอบทิ้งกากของเสียอุตสาหกรรมลงในอ่างเก็บน้ำลุ่มน้ำโจนแห่งที่ 16 ตำบลเขาหินซ้อน อำเภอพนมสารคาม จังหวัดแะเชิงเทรา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ระยอง",
+                "name": "วิน โพรเสส", 
+                "coords": [12.5010, 101.2055], // 
+                "info": "<b>วิน โพรเสส/b><br>การรั่วไหลและแพร่กระจายของสารเคมีที่เป็นวัตถุอันตรายภายในโรงงานของบริษัท วิน โพรเสส จำกัด ตำบลบางบุตร อำเภอบ้านค่าย จังหวัดระยอง<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "นครราชสีมา",
+                "name": "เอกอุทัย สาขากลางดง", 
+                "coords": [14.64092, 101.293], // 
+                "info": "<b>เอกอุทัย สาขากลางดง/b><br>การลักลอบฝังกลบกากอุตสาหกรรมในพื้นที่ของบริษัท เอกอุทัย จำกัด ตำบลกลางดง อำเภอปากช่อง จังหวัดนครราชสีมา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "เพชรบูรณ์",
+                "name": "เอกอุทัย สาขาศรีเทพ", 
+                "coords": [15.375799, 101.134654], // 
+                "info": "<b>เอกอุทัย สาขาศรีเทพ/b><br>กรณีกลิ่นเหม็นรบกวน การปนเปื้อนในน้ำใต้ดิน และการระบายน้ำทิ้งของบริษัท เอกอุทัย จำกัด ตำบลม่วงชุม อำเภอศรีเทพ จังหวัดเพชรบูรณ์<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ราชบุรี",
+                "name": "ธรรมเสน โพธาราม", 
+                "coords": [13.4020, 99.4318], // 
+                "info": "<b>ธรรมเสน โพธาราม/b><br>กรณีการลักลอบทิ้งน้ำเสียในพื้นที่ตำบลธรรมเสน อำเภอโพธาราม จังหวัดราชบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ฉะเชิงเทรา",
+                "name": "ท่ากระดาน สนามชัยเขต", 
+                "coords": [13.3621, 101.4301], // 
+                "info": "<b>ท่ากระดาน สนามชัยเขต/b><br>การลักลอบทิ้งของเสียอันตรายในพื้นที่หมู่ที่ 6 ตำบลท่ากระดาน อำเภอสนามชัยเขต จังหวัดฉะเชิงเทรา<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ราชบุรี",
+                "name": "ฟาร์มหมู ศุภฤกษ์", 
+                "coords": [13.3502, 99.3733], // 
+                "info": "<b>ฟาร์มหมู ศุภฤกษ์/b><br>กรณีเรื่องร้องเรียนการประกอบกิจการฟาร์มสุกรของบริษัท ศุภฤกษ์ฟาร์ม จำกัด ตำบลจอมบึง อำเภอจอมบึง จังหวัดราชบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ราชบุรี",
+                "name": "แวกซ์ กาเบ็จ", 
+                "coords": [13.33, 99.35], // 
+                "info": "<b>แวกซ์ กาเบ็จ/b><br>การรั่วไหลของน้ำเสียในโรงงานของบริษัท แวกซ์ กาเบ็จ รีไซเคิล เซ็นเตอร์ จำกัด อำเภอจอมบึง จังหวัดราชบุรี ศุภฤกษ์ฟาร์ม จำกัด ตำบลจอมบึง อำเภอจอมบึง จังหวัดราชบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ปราจีนบุรี",
+                "name": "เวสต์ 2 เอ็นเนอร์ยี่", 
+                "coords": [13.4649, 101.41], // 
+                "info": "<b>เวสต์ 2 เอ็นเนอร์ยี่/b><br>การลักลอบทิ้งกากของเสียอุตสาหกรรมบริเวณพื้นที่ตำบลลาดตะเคียน อำเภอกบินทร์บุรี จังหวัดปราจีนบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+            {
+                "province": "ปราจีนบุรี",
+                "name": "หาดนางแก้ว กบินทร์บุรี", 
+                "coords": [13.5758, 101.3841], // 
+                "info": "<b>หาดนางแก้ว กบินทร์บุรี/b><br>การลักลอบทิ้งกากของเสียพื้นที่หมู่ 6 ตำบลหาดนางแก้ว อำเภอกบินทร์บุรี จังหวัดปราจีนบุรี<br><img src='https://drive.google.com/uc?export=view&id=1aRBtTQxS95yqZiUWmmghf9kmnd3i0FtS' alt='การลักลอบทิ้งกากของเสียอุตสาหกรรม' class='info-popup'>",
+            },
+        ];
+
+        var provinceColors = {
+            "อุทัยธานี": "#c2e0f4",
+            "ลพบุรี": "#b3d9f4"
+        };
+
+        locations.forEach(function(location) {
+            var marker = L.marker(location.coords).addTo(map);
+            marker.bindPopup(location.info);
+
+            if (!document.querySelector('.province-item[data-province="' + location.province + '"]')) {
+                var summaryItem = document.createElement('div');
+                summaryItem.className = 'province-item';
+                summaryItem.dataset.province = location.province;
+                summaryItem.dataset.provinceColor = provinceColors[location.province];
+                summaryItem.innerHTML = location.province;
+                document.getElementById('summary').appendChild(summaryItem);
+            }
+        });
+
+        document.querySelectorAll('.province-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var province = this.dataset.province;
+                var cases = locations.filter(function(loc) { return loc.province === province; });
+
+                var caseList = this.querySelector('.case-list');
+                if (caseList) {
+                    caseList.style.display = caseList.style.display === 'none' ? 'block' : 'none';
+                } else {
+                    caseList = document.createElement('ul');
+                    caseList.className = 'case-list';
+                    caseList.style.display = 'block';
+
+                    cases.forEach(function(loc) {
+                        var listItem = document.createElement('li');
+                        listItem.textContent = loc.name;
+                        listItem.dataset.coords = JSON.stringify(loc.coords);
+                        listItem.addEventListener('click', function() {
+                            var coords = JSON.parse(this.dataset.coords);
+                            map.flyTo(coords, 10);
+                            setTimeout(function() {
+                                L.popup()
+                                    .setLatLng(coords)
+                                    .setContent(loc.info)
+                                    .openOn(map);
+                            }, 500);
+                        });
+                        caseList.appendChild(listItem);
+                    });
+
+                    this.appendChild(caseList);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
